@@ -1,0 +1,266 @@
+syntax = "proto3";
+package com.ducnh.v1;
+option java_package = "api.grpc.v1";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+message Address {
+	string id = 1;
+	string number = 2;
+	string residency = 3;
+	string street = 4;
+	string city = 5;
+	string state = 6;
+	string country = 7;
+	string postalCode = 8;
+}
+
+message BillingDetails {
+	Address address = 1;
+	string email = 2;
+	string name = 3;
+	string phone = 4;
+}
+
+message Card {
+	string id = 1;
+	string name = 2;
+	Address address = 3;
+	string brand = 4;
+	string country = 5;
+	uint32 expMonth = 6;
+	uint32 expYear = 7;
+	string fingerprint = 8;
+	string funding = 9;
+	uint32 installments = 10;
+	string last4 = 11;
+	string customer = 12;
+}
+
+message StripeAccount {
+	string id = 1;
+}
+
+message PaymentMethodDetails {
+	Card card = 1;
+	string type = 2;
+	StripeAccount stripeAccount = 3;
+}
+
+message Refund {
+	string id = 1;
+	uint32 amount = 2;
+	string fee = 3;
+	google.protobuf.Timestamp created = 4;
+	string currency = 5;
+}
+
+message AchCreditTransfer {
+	string accountNumber = 1;
+	string routingNumber = 2;
+	string fingerprint = 3;
+	string bankName = 4;
+	string swiftCode = 5;
+}
+
+message Owner {
+	Address address = 1;
+	string email = 2;
+	string name = 3;
+	string phone = 4;
+	Address verifiedAddress = 5;
+	string verifiedEmail = 6;
+	string verifiedName = 7;
+	string verifiedPhone = 8;
+}
+
+message Receiver {
+	string address = 1;
+	uint32 amountCharged = 2;
+	uint32 amountReceived = 3;
+	uint32 amountReturned = 4;
+	enum RefundAttributesMethod {
+		EMAIL = 0;
+		MANUAL = 1;
+		NONE = 2;
+	}
+	RefundAttributesMethod refundAttributesMethod = 5;
+	enum RefundAttributeStatus {
+		MISSING = 0;
+		REQUESTED = 1;
+		AVAILABLE = 2;	
+	}
+	RefundAttributeStatus refundAttributeStatus = 6;
+}
+
+enum Flow {
+	REDIRECT = 0;
+	RECEIVER = 1;
+	CODEVERIFICATION = 2;
+	NONE = 3;
+}
+
+enum Usage {
+	REUSABLE = 0;
+	SINGLEUSE = 1;
+}
+
+message CreateSourceReq {
+	string type = 1;
+	uint32 amount = 2;
+	string currency = 3;
+	Owner owner = 4;
+	string statementDescriptor = 5;
+	Flow flow = 6;
+	Receiver receiver = 7;
+	Usage usage = 8;
+	message Response {
+		Source source = 1;
+	}
+}
+
+message UpdateSourceReq {
+	string sourceId = 1;
+	uint32 amount = 2;
+	Owner owner = 3;
+	message Reponse {
+		Source source = 1;
+	}
+}
+
+message SourceId {
+	string id = 1;
+	message Response {
+		Source source = 1;
+	}
+}
+
+message AttachOrDetachReq {
+	string sourceId = 1;
+	string customerId = 2;
+	message Response {
+		Source source = 1;
+	}
+}
+
+message Source {
+	string id = 1;
+	uint32 amount = 2;
+	string clientSecret = 3;
+	uint64 created = 4;
+	string currency = 5;
+	Flow flow = 6;
+	Owner owner = 7;
+	Receiver receiver = 8;
+	string statementDescriptor = 9;
+	enum Status {
+		CANCELLED = 0;
+		CHARGEABLE = 1;
+		CONSUMED = 2;
+		FAILED = 3;
+		PENDING = 4;
+	}
+	Status status = 10;
+	string type = 11;
+	Usage usage = 12;
+}
+
+message CreateChargeReq {
+	uint32 amount = 1;
+	string currency = 2;
+	string customerId = 3;
+	string description = 4;
+	string receiptEmail = 5;
+	string sourceId = 6;
+	string statementDescriptor = 7;
+	message Response {
+		Charge charge = 1;
+	} 
+}
+
+message UpdateChargeReq {
+	string chargeId = 1;
+	string customerId = 2;
+	string description = 3;
+	string receiptEmail = 4;
+	message Response {
+		Charge charge = 1;
+	}
+}
+
+message CaptureChargeReq {
+	string chargeId = 1;
+	uint amount = 2;
+	string receiptEmail = 3;
+	string statementDescriptor = 4;
+	message Response {
+		Charge charge = 1;
+	}
+}
+
+message ChargeId {
+	string id = 1;
+	message Response {
+		Charge charge = 1;
+	}
+}
+
+message CustomerId {
+	string id = 1;
+	message Response {
+		Charge charge = 1;
+	}
+}
+
+message Charge {
+	string id = 1;
+	uint32 amount = 2;
+	uint32 amountCaptured = 3;
+	uint32 amountRefunded = 4;
+	string balanceTransactionId = 5;
+	BillingDetails billingDetails = 6;
+	string calculatedStatementDescriptor = 7;
+	bool captured = 8;
+	uint64 created = 9;
+	string currency = 10;
+	string customerId = 11;
+	string description = 12;
+	bool disputed = 13;
+	uint32 failureCode = 14;
+	string failureMessage = 15;
+	string invoiceId = 16;
+	string orderId = 17;
+	bool paid = 18;
+	string paymentMethodId = 19;
+	PaymentMethodDetails paymentMethodDetails = 20;
+	string receiptEmail = 21;
+	string receiptNumber = 22;
+	bool refunded = 23;
+	repeated Refund refunds = 24;
+	string statementDescriptor = 25;
+	enum Status {
+		SUCCEEDED = 0;
+		PENDING = 1;
+		FAILED = 2;
+	}
+	Status status = 26;
+	string sourceId = 27;
+}
+
+service ChargeService {
+	rpc Create(CreateChargeReq) returns (CreateChargeReq.Response);
+	rpc Retrieve(ChargeId) returns (ChargeId.Response);
+	rpc Update(UpdateChargeReq) returns (UpdateChargeReq.Response);
+	rpc Capture(CaptureChargeReq) returns (CaptureChargeReq.Response);
+	rpc RetrieveAll(CustomerId) returns (CustomerId.Response);
+}
+
+service SourceService {
+	rpc Create(CreateSourceReq) returns (CreateSourceReq.Response);
+	rpc Retrieve(SourceId) returns (SourceId.Response);
+	rpc Update(UpdateSourceReq) returns (UpdateSourceReq.Response);
+	rpc Attach(AttachOrDetachReq) returns (AttachOrDetachReq.Response);
+	rpc Detach(AttachOrDetachReq) returns (AttachOrDetachReq.Response);
+}
+
